@@ -2,18 +2,13 @@
 var fetch = require('node-fetch');
 
 if(process.argv.length < 4) {
-	console.log("Usage:", process.argv[0], "<date of birth>", "<zip code>", "[phone]") ;
-	console.log("e.g.:", process.argv[0], "1975-10-20", "10002", "2125551212") ;
+	console.log("Usage:", process.argv[0], "<date of birth>", "<zip code>") ;
+	console.log("e.g.:", process.argv[0], "1975-10-20", "10002") ;
 	process.exit(1);
 }
 
 var dob = process.argv[2];
 var zip = process.argv[3];
-var phone = null;
-if(process.argv.length == 5) {
-	phone = process.argv[4];
-	sendMessage("Will notify you when appointments are available for "+zip);
-}
 
 var data = {
 	message: {
@@ -109,11 +104,8 @@ function checkAndRepeat() {
 	check4vax()
 	.then(response => {
 		var results = response.actions[0].returnValue.returnValue.lstMainWrapper;
-		console.log(JSON.stringify(results, null, 4));
 		if(results.length > 0) {
-			if(phone) {
-				sendMessage("Appointments available: "+results.length);
-			}
+			console.log(JSON.stringify(results, null, 4));
 			return;
 		}
 		setTimeout(checkAndRepeat, 300000);
