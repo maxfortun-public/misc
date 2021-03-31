@@ -104,17 +104,19 @@ params.scheduleDate = [ date.getFullYear(), ("0"+(date.getMonth()+1)).slice(-2),
 function checkAndRepeat() {
 	check4vax()
 	.then(response => {
-			console.error("Response", JSON.stringify(response, null, 4));
+		//console.error("Response", JSON.stringify(response, null, 4));
 		var results = response.actions[0].returnValue.returnValue.lstMainWrapper;
 		if(results.length > 0) {
 			results = results[0].lstDataWrapper;
 		}
+/*
 		if(results.length > 0) {
 			console.error("Unfiltered", JSON.stringify(results, null, 4));
 		}
+*/
 		if(range) {
 			results = results.filter(result => result.mileRange < range);
-			console.error("Filtered", JSON.stringify(results, null, 4));
+			// console.error("Filtered", JSON.stringify(results, null, 4));
 		}
 		if(results.length > 0) {
 			console.log(JSON.stringify(results, null, 4));
