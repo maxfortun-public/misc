@@ -2,13 +2,17 @@
 var fetch = require('node-fetch');
 
 if(process.argv.length < 4) {
-	console.log("Usage:", process.argv[0], "<date of birth>", "<zip code>") ;
-	console.log("e.g.:", process.argv[0], "1975-10-20", "10002") ;
+	console.error("Usage:", process.argv[0], "<date of birth>", "<zip code>", "[range in miles]");
+	console.error("e.g.:", process.argv[0], "1975-10-20", "10002", "3") ;
 	process.exit(1);
 }
 
 var dob = process.argv[2];
 var zip = process.argv[3];
+var range = null;
+if(process.argv.length >= 5) {
+	range = parseInt(process.argv[4]);
+}
 
 var data = {
 	message: {
@@ -74,7 +78,7 @@ function paramsToString(params) {
 }
 
 function check4vax() {
-	console.log(new Date(), "Checking...");
+	console.error(new Date(), "Checking...");
 	var params = {
 		message: data.message
 	};
@@ -104,6 +108,12 @@ function checkAndRepeat() {
 	check4vax()
 	.then(response => {
 		var results = response.actions[0].returnValue.returnValue.lstMainWrapper;
+		if(results.length > 0) {
+			console.error(results);
+		}
+		if(range) {
+			results = results.filter(result => result.mileRange < range);
+		}
 		if(results.length > 0) {
 			console.log(JSON.stringify(results, null, 4));
 			return;
