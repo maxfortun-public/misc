@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 var fetch = require('node-fetch');
 
-if(process.argv.length < 4) {
-	console.error("Usage:", process.argv[0], "<date of birth>", "<zip code>", "[range in miles]");
+if(process.argv.length < 5) {
+	console.error("Usage:", process.argv[0], "<date of birth>", "<zip code>", "<range in miles>", "[email]");
 	console.error("e.g.:", process.argv[0], "1975-10-20", "10002", "3") ;
 	process.exit(1);
 }
 
 var dob = process.argv[2];
 var zip = process.argv[3];
-var range = null;
-if(process.argv.length >= 5) {
-	range = parseInt(process.argv[4]);
+var range = parseInt(process.argv[4]);
+
+if(process.argv.length >= 6) {
+	email = process.argv[5];
 }
 
 var data = {
@@ -93,10 +94,6 @@ function check4vax() {
 	return fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }, body: paramsString}).then(response => response.json());
 }
 
-function sendMessage(message) {
-	return;
-}
-
 var params = data.message.actions[0].params.params;
 params.zipCode = zip; 
 params.patientZipCode = zip;
@@ -107,19 +104,55 @@ params.scheduleDate = [ date.getFullYear(), ("0"+(date.getMonth()+1)).slice(-2),
 function checkAndRepeat() {
 	check4vax()
 	.then(response => {
+			console.error("Response", JSON.stringify(response, null, 4));
 		var results = response.actions[0].returnValue.returnValue.lstMainWrapper;
 		if(results.length > 0) {
-			console.error(results);
+			results = results[0].lstDataWrapper;
+		}
+		if(results.length > 0) {
+			console.error("Unfiltered", JSON.stringify(results, null, 4));
 		}
 		if(range) {
 			results = results.filter(result => result.mileRange < range);
+			console.error("Filtered", JSON.stringify(results, null, 4));
 		}
 		if(results.length > 0) {
 			console.log(JSON.stringify(results, null, 4));
+			sendMail(results);
 			return;
 		}
 		setTimeout(checkAndRepeat, 300000);
 	});
 }
 checkAndRepeat();
+
+function sendMail(results) {
+	var nodemailer = require('nodemailer');
+	const transporter = nodemailer.createTransport({
+		port: 25,
+		host: 'localhost',
+		tls: {
+			rejectUnauthorized: false
+		},
+	});
+
+	var message = {
+		from: 'noreply@gmail.com',
+		to: email,
+		subject: `${results.length} results in ${range} miles for ${zip}`,
+		text: `
+				https://vax4nyc.nyc.gov/patient/s/ to register for vaccine.
+		`,
+		html: `
+				<a href="https://vax4nyc.nyc.gov/patient/s/">https://vax4nyc.nyc.gov/patient/s/</a> to register for vaccine.
+		`,
+	};
+
+	transporter.sendMail(message, (error, info) => {
+		if (error) {
+			return console.log(error);
+		}
+		console.error('Message sent: %s', info.messageId);
+	});
+}
 
